@@ -5,7 +5,7 @@ const API_BASE_URL = 'https://erp-4-a59y.onrender.com'; // <-- change this to yo
 
 // Create axios instance with default config
 const api = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: 'https://erp-3-oxgx.onrender.com',
   withCredentials: true, // Important for cookies/sessions
   headers: {
     'Content-Type': 'application/json',
