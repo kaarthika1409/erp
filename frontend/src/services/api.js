@@ -1,19 +1,19 @@
 import axios from 'axios';
 
-// ✅ Use your Render backend API URL here
-const API_BASE_URL = ' https://erp-5-khxf.onrender.com'; // <-- change this to your actual Render backend URL
+// ✅ Use your actual Render backend URL here (replace if different)
+const API_BASE_URL = 'https://erp-5-khxf.onrender.com'; // no spaces, correct base URL
 
-// Create axios instance with default config
+// Create axios instance
 const api = axios.create({
-  baseURL: 'https://erp-3-oxgx.onrender.com',
-  withCredentials: true, // Important for cookies/sessions
+  baseURL: `${API_BASE_URL}/api`, // ensures all requests hit your /api routes
+  withCredentials: true, // needed if backend uses cookies/sessions
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   },
 });
 
-// Add token to requests if it exists
+// ✅ Request Interceptor — adds auth token if available
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
@@ -21,60 +21,58 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
-      console.warn('No auth token found in localStorage');
-      // Optional redirect if not logged in
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
+      console.warn('⚠️ No auth token found in localStorage');
     }
 
     return config;
   },
   (error) => {
-    console.error('Request Error:', error);
+    console.error('❌ Request Error:', error);
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor to handle 401 Unauthorized errors
+// ✅ Response Interceptor — handles expired tokens & errors
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const originalRequest = error.config;
 
-    // Handle expired token
+    // Handle expired token (401 Unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
-      return api.post('/auth/refresh-token')
-        .then((response) => {
-          if (response.status === 200) {
-            const { token } = response.data;
-            localStorage.setItem('token', token);
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return api(originalRequest);
-          }
-        })
-        .catch((refreshError) => {
-          console.error('Token refresh failed:', refreshError);
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-          return Promise.reject(refreshError);
-        });
+      try {
+        const refreshResponse = await api.post('/auth/refresh-token');
+        if (refreshResponse.status === 200) {
+          const { token } = refreshResponse.data;
+          localStorage.setItem('token', token);
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.error('🔴 Token refresh failed:', refreshError);
+        localStorage.removeItem('token');
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      }
     }
 
-    // General error handler
-    const errorMessage = error.response?.data?.error || error.message || 'An error occurred';
-    console.error('API Error:', {
+    // General API error handler
+    const errorMessage =
+      error.response?.data?.error || error.message || 'An unknown error occurred';
+
+    console.error('🚨 API Error:', {
       url: error.config?.url,
       status: error.response?.status,
       data: error.response?.data,
       message: error.message,
     });
 
+    // Force logout if token is invalid or expired
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
-      if (!window.location.pathname.includes('login')) {
+      if (!window.location.pathname.includes('/login')) {
         window.location.href = '/login';
       }
     }
@@ -84,3 +82,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+
