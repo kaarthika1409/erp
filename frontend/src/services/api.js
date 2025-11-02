@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // ✅ Use your Render backend API URL here
-const API_BASE_URL = 'https://college-erp-backend.onrender.com/api'; // <-- change this to your actual Render backend URL
+const API_BASE_URL = 'https://erp-kh8t.vercel.app/'; // <-- change this to your actual Render backend URL
 
 // Create axios instance with default config
 const api = axios.create({
