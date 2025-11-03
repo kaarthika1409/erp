@@ -7,7 +7,7 @@ const app = express();
 
 // ✅ Allow only your deployed frontend (Vercel)
 const allowedOrigins = [
-  'https://clgerp.vercel.app' // your correct Vercel frontend URL
+  'https://clgerp.vercel.app/login' // your correct Vercel frontend URL
 ];
 
 const corsOptions = {
