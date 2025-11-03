@@ -5,9 +5,9 @@ require('dotenv').config();
 
 const app = express();
 
-// ✅ Allow only your deployed frontend
+// ✅ Allow only your deployed frontend (Vercel)
 const allowedOrigins = [
-  'https://erp-clg.vercel.app' // your Vercel frontend URL
+  'https://clgerp.vercel.app' // your correct Vercel frontend URL
 ];
 
 const corsOptions = {
@@ -25,6 +25,7 @@ const corsOptions = {
   maxAge: 86400
 };
 
+// ✅ Apply middleware
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -46,12 +47,12 @@ mongoose.connect(process.env.MONGODB_URI, {
   app.use('/api/courses', require('./routes/courseRoutes'));
   app.use('/api/leaves', require('./routes/leaves'));
 
-  // ✅ Health route
+  // ✅ Health check route
   app.get('/', (req, res) => {
     res.json({ message: 'College ERP System API is running ✅' });
   });
 
-  // ✅ Error handler
+  // ✅ Global error handler
   app.use((err, req, res, next) => {
     console.error('🔥 Error:', err.stack);
     res.status(500).json({ error: err.message });
@@ -59,9 +60,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 
   const PORT = process.env.PORT || 5001;
   app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
-
 })
 .catch((err) => {
   console.error('❌ MongoDB connection error:', err);
   process.exit(1);
 });
+
