@@ -1,29 +1,27 @@
 import axios from 'axios';
 
-// ✅ Use your actual Render backend URL here (replace if different)
-const API_BASE_URL = 'https://erp-5-khxf.onrender.com'; // no spaces, correct base URL
+// ✅ Use your live Render backend URL
+const API_BASE_URL = 'https://erp-6-xp5w.onrender.com'; // updated to your deployed backend
 
-// Create axios instance
+// ✅ Create axios instance
 const api = axios.create({
-  baseURL: `${API_BASE_URL}/api`, // ensures all requests hit your /api routes
-  withCredentials: true, // needed if backend uses cookies/sessions
+  baseURL: `${API_BASE_URL}/api`, // all requests go to /api/*
+  withCredentials: true, // allow cookies if needed
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
+    Accept: 'application/json',
   },
 });
 
-// ✅ Request Interceptor — adds auth token if available
+// ✅ Request Interceptor — attach JWT token if present
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
-
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     } else {
       console.warn('⚠️ No auth token found in localStorage');
     }
-
     return config;
   },
   (error) => {
@@ -32,13 +30,13 @@ api.interceptors.request.use(
   }
 );
 
-// ✅ Response Interceptor — handles expired tokens & errors
+// ✅ Response Interceptor — handle 401 or token expiry
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // Handle expired token (401 Unauthorized)
+    // Handle token expiry
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
 
@@ -58,10 +56,7 @@ api.interceptors.response.use(
       }
     }
 
-    // General API error handler
-    const errorMessage =
-      error.response?.data?.error || error.message || 'An unknown error occurred';
-
+    // Log detailed error info for debugging
     console.error('🚨 API Error:', {
       url: error.config?.url,
       status: error.response?.status,
@@ -69,7 +64,7 @@ api.interceptors.response.use(
       message: error.message,
     });
 
-    // Force logout if token is invalid or expired
+    // If unauthorized, force logout
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       if (!window.location.pathname.includes('/login')) {
@@ -77,9 +72,12 @@ api.interceptors.response.use(
       }
     }
 
-    return Promise.reject(errorMessage);
+    return Promise.reject(
+      error.response?.data?.error || error.message || 'An unknown error occurred'
+    );
   }
 );
 
 export default api;
+
 
